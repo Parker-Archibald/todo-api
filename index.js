@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const mongoString = 'mongodb+srv://pdarchibald:Musicman611!@cluster0.rburzaf.mongodb.net/Todo';
 const app = express();
 const cors = require('cors');
+const port = process.env.PORT || 3001;
 
 app.use (cors());
 app.use(express.json());
@@ -162,6 +163,6 @@ app.delete('/deleteTodo/:task_name/:todo_name', (req, res) => {
     })
 })
 
-app.listen(3001, () => {
-    console.log(`Server Started at ${3001}`)
+app.listen(port, () => {
+    console.log(`Server Started at ${port}`)
 })
