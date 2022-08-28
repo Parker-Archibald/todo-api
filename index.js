@@ -1,11 +1,12 @@
-require('dotenv').config();
+// require('dotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
 const mongoString = 'mongodb+srv://pdarchibald:Musicman611!@cluster0.rburzaf.mongodb.net/Todo';
 const app = express();
 const cors = require('cors');
-const port = process.env.PORT || 3001;
+// const port = process.env.PORT || 3001;
+const port = 'https://parker-archibald-todo.herokuapp.com/';
 
 app.use (cors());
 app.use(express.json());
