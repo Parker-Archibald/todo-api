@@ -6,7 +6,7 @@ const mongoString = 'mongodb+srv://pdarchibald:Musicman611!@cluster0.rburzaf.mon
 const app = express();
 const cors = require('cors');
 // const port = process.env.PORT || 3001;
-const port = 'https://parker-archibald-todo.herokuapp.com/';
+const port = process.env.PORT;
 
 app.use (cors());
 app.use(express.json());
