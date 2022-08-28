@@ -5,8 +5,8 @@ const mongoose = require('mongoose');
 const mongoString = 'mongodb+srv://pdarchibald:Musicman611!@cluster0.rburzaf.mongodb.net/Todo';
 const app = express();
 const cors = require('cors');
-// const port = process.env.PORT || 3001;
-const port = process.env.PORT;
+const port = process.env.PORT || 3001;
+// const port ="https://parker-archibald-todo-api.herokuapp.com";
 
 app.use (cors());
 app.use(express.json());
@@ -167,6 +167,21 @@ app.delete('/deleteTodo/:task_name/:todo_name', (req, res) => {
             else console.log('not found at ' + i);
         }
     })
+})
+
+// Delete Task
+
+app.delete('/deleteTask/:task_name', (req, res) => {
+    console.log(req.params.task_name)
+    const collection = database.collection('Tasks');
+    if(collection.find({task_name: req.params.task_name})) {
+        collection.deleteOne({task_name: req.params.task_name})
+
+        res.send("Deleted " + req.params.task_name);
+    }
+    else {
+        res.send("Task not found");
+    }
 })
 
 app.listen(port, () => {
