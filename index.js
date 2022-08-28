@@ -14,6 +14,11 @@ app.use(express.json());
 mongoose.connect(mongoString);
 const database = mongoose.connection;
 
+app.get("/", function(req, res) {
+    //when we get an http get request to the root/homepage
+    res.send("Hello World");
+  });
+
 // Get all tasks
 
 app.get('/getAllTasks', (req, res) => {
