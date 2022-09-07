@@ -100,7 +100,7 @@ app.put('/isCompleted/:task_name/:todo_name/:isCompleted', (req, res) => {
 
     if(collection.find({task_name: req.params.task_name})) {
         collection.find({task_name: req.params.task_name}).toArray((err, info) => {
-            
+            console.log(req.params.isCompleted)
             const newData = info;
             // console.log(req.params.task_name + ' ' + req.params.todo_name + ' ' + req.params.isCompleted)
 
@@ -180,6 +180,34 @@ app.delete('/deleteTask/:task_name', (req, res) => {
     }
     else {
         res.send("Task not found");
+    }
+})
+
+// Settings
+
+app.get('/getTheme', (req, res) => {
+    const collection = database.collection('Settings');
+    collection.find({settingName: 'themes'}).toArray((err, results) => {
+        res.send(results);
+    })
+})
+
+app.put('/setTheme/:primary/:secondary', (req, res) => {
+    const collection = database.collection('Settings');
+    
+    if(collection.find({settingName: 'themes'})) {
+        collection.find({settingName: 'themes'}).toArray((err, results) => {
+            const newData = results[0];
+            const newPrimary = req.params.primary;
+            const newSecondary = req.params.secondary;
+
+            newData.themeColors.primary = newPrimary;
+            newData.themeColors.secondary = newSecondary;
+
+            collection.updateOne({settingName: 'themes'}, {$set: newData}, {upsert: true});
+
+            res.send({status: 'Theme updated'});
+        })
     }
 })
 
