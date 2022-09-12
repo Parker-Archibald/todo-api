@@ -21,15 +21,15 @@ app.get("/", function(req, res) {
 
 // Get all tasks
 
-app.get('/getAllTasks', (req, res) => {
+app.get('/getAllTasks/:userId', (req, res) => {
     const collection = database.collection("Tasks");
-    collection.find({}).toArray((err, results) => {
+    collection.find({userId: req.params.userId}).toArray((err, results) => {
         if(!err) {
             res.send(results)
         }
         else {
             console.log(err)
-            res.send(err)
+            res.send(err) 
         }
     })
 })
@@ -43,23 +43,64 @@ app.get('/getTask/:task_name', (req, res) => {
     })
 })
 
+// Get User for login
+
+app.get('/getUser/:email/:password', (req, res) => {
+    const collection = database.collection("Users");
+    if(collection.find({email: req.params.email})) {
+        collection.find({email: req.params.email}).toArray((err, results) => {
+            if(results[0].password === req.params.password) {
+                const newData = results;
+                delete newData[0].password;
+                console.log(newData)
+
+                res.send(newData)
+                
+            }
+            else {
+                res.status(401).send("Incorrect Password") 
+            }
+        })
+    }
+    else {
+        res.status(401).send("No User Found")
+    }
+})
+
 // Post a new task
 
 app.post('/postTask', (req, res) => {
     mongoose.connect(mongoString);
     const database = mongoose.connection;
+    console.log(req.body.userId)
     const collection = database.collection("Tasks");
     collection.insertMany([
         {
             task_name: req.body.task_name,
+            userId: req.body.userId,
             date: req.body.date,
             time: req.body.time,
             notes: req.body.notes,
-            items: []
+            items: [],
         }
     ])
     res.send('Task Created')
 }) 
+ 
+// Create new user
+
+app.post('/newUser', (req, res) => { 
+    const collection = database.collection("Users");
+    collection.insertMany([
+        {
+            first_name: req.body.first_name,
+            last_name: req.body.last_name,
+            email: req.body.email,
+            password: req.body.password
+        }
+    ])
+    res.send('User Created');
+})
 
 // Add TODO items to Task
 
@@ -72,6 +113,7 @@ app.put('/putToDo/:task_name', (req, res) => {
         time: req.body.time,
         notes: req.body.notes,
         isCompleted: req.body.isCompleted,
+        userId: req.params.userId
     }
     
     if(collection.find({task_name: req.params.task_name})) {
