@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const mongoString = 'mongodb+srv://pdarchibald:Musicman611!@cluster0.rburzaf.mongodb.net/Todo';
 const app = express();
 const cors = require('cors');
+const { ObjectId } = require('mongodb');
 const port = process.env.PORT || 3001;
 // const port ="https://parker-archibald-todo-api.herokuapp.com";
 
@@ -52,7 +53,6 @@ app.get('/getUser/:email/:password', (req, res) => {
             if(results[0].password === req.params.password) {
                 const newData = results;
                 delete newData[0].password;
-                console.log(newData)
 
                 res.send(newData)
                 
@@ -60,6 +60,22 @@ app.get('/getUser/:email/:password', (req, res) => {
             else {
                 res.status(401).send("Incorrect Password") 
             }
+        })
+    }
+    else {
+        res.status(401).send("No User Found")
+    }
+})
+
+// Get user for settings by ID
+
+app.get('/getUser/:userId', (req, res) => {
+    const collection = database.collection("Users");
+    if(collection.find({_id: ObjectId(`${req.params.userId}`)})) {
+        collection.find({_id: ObjectId(`${req.params.userId}`)}).toArray((err, results) => {
+            let newData = results;
+            delete newData[0].password;
+            res.send(newData)
         })
     }
     else {
