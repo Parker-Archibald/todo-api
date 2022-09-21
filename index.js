@@ -2,7 +2,8 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
-const mongoString = 'mongodb+srv://pdarchibald:Musicman611!@cluster0.rburzaf.mongodb.net/Todo';
+// const mongoString = 'mongodb+srv://pdarchibald:Musicman611!@cluster0.rburzaf.mongodb.net/TODO_SCHEDULER';
+const mongoString = 'mongodb+srv://pdarchibald:Musicman611!@cluster0.rburzaf.mongodb.net/Todo'
 const app = express();
 const cors = require('cors');
 const { ObjectId } = require('mongodb');
@@ -12,8 +13,6 @@ const port = process.env.PORT || 3001;
 app.use (cors());
 app.use(express.json());
 
-mongoose.connect(mongoString);
-const database = mongoose.connection;
 
 app.get("/", function(req, res) {
     //when we get an http get request to the root/homepage
@@ -22,38 +21,75 @@ app.get("/", function(req, res) {
 
 // Get all tasks
 
-app.get('/getAllTasks/:userId', (req, res) => {
+app.get('/getAllTasks/:userId', async (req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
     const collection = database.collection("Tasks");
-    collection.find({userId: req.params.userId}).toArray((err, results) => {
-        if(!err) {
-            res.send(results)
-        }
-        else {
-            console.log(err)
-            res.send(err) 
-        }
-    })
+    if(collection.find({userId: req.params.userId})) {
+        collection.find({userId: req.params.userId}).toArray((err, results) => {
+                if(!err) {
+                    res.send(results)
+                }
+                else {
+                    console.log(err)
+                    res.send(err) 
+                }
+            })
+    }
+    else {
+        res.send('none')
+    }
+
 })
 
 // Get all info for one task
 
-app.get('/getTask/:task_name', (req, res) => {
-    const collection = database.collection("Tasks");
-    collection.find({task_name: req.params.task_name}).toArray((err, results) => {
-       res.send(results)
-    })
+// app.get('/getTask/:task_name', async (req, res) => {
+//     await mongoose.connect(mongoString);
+//     const database = mongoose.connection;
+//     const collection = database.collection("Tasks");
+//     collection.find({task_name: req.params.task_name}).toArray((err, results) => {
+//        res.send(results)
+//     })
+// })
+
+// Get todos for user and task
+
+app.get('/getTodos/:userId/:task_name', async (req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
+    const collection = database.collection("todos");
+
+    let newData = [];
+
+    if(collection.find({userId: req.params.userId})) {
+        collection.find({userId: req.params.userId}).toArray((err, results) => {
+            for(let i = 0; i < results.length; i++) {
+                
+                if(results[i].task_name === req.params.task_name) {
+                    newData.push(results[i])
+                }
+            }
+            res.send(newData)
+        })
+    }
+        
+    else {
+        res.status(403).send("User not Found")
+    }
 })
 
 // Get User for login
 
-app.get('/getUser/:email/:password', (req, res) => {
+app.get('/getUser/:email/:password', async (req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
     const collection = database.collection("Users");
     if(collection.find({email: req.params.email})) {
         collection.find({email: req.params.email}).toArray((err, results) => {
             if(results[0].password === req.params.password) {
                 const newData = results;
                 delete newData[0].password;
-
                 res.send(newData)
                 
             }
@@ -69,7 +105,9 @@ app.get('/getUser/:email/:password', (req, res) => {
 
 // Get user for settings by ID
 
-app.get('/getUser/:userId', (req, res) => {
+app.get('/getUser/:userId', async (req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
     const collection = database.collection("Users");
     if(collection.find({_id: ObjectId(`${req.params.userId}`)})) {
         collection.find({_id: ObjectId(`${req.params.userId}`)}).toArray((err, results) => {
@@ -85,19 +123,18 @@ app.get('/getUser/:userId', (req, res) => {
 
 // Post a new task
 
-app.post('/postTask', (req, res) => {
-    mongoose.connect(mongoString);
+app.post('/postTask/:userId', async (req, res) => {
+    await mongoose.connect(mongoString);
     const database = mongoose.connection;
     console.log(req.body.userId)
     const collection = database.collection("Tasks");
     collection.insertMany([
         {
             task_name: req.body.task_name,
-            userId: req.body.userId,
+            userId: req.params.userId,
             date: req.body.date,
             time: req.body.time,
             notes: req.body.notes,
-            items: [],
         }
     ])
     res.send('Task Created')
@@ -105,7 +142,9 @@ app.post('/postTask', (req, res) => {
  
 // Create new user
 
-app.post('/newUser', (req, res) => { 
+app.post('/newUser', async (req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
     const collection = database.collection("Users");
     collection.insertMany([
         {
@@ -118,72 +157,41 @@ app.post('/newUser', (req, res) => {
     res.send('User Created');
 })
 
-// Add TODO items to Task
+// Post new TODO
 
-app.put('/putToDo/:task_name', (req, res) => {
-    mongoose.connect(mongoString);
+app.post('/newTodo/:task_name', async (req, res) => {
+    await mongoose.connect(mongoString);
     const database = mongoose.connection;
-    const collection = database.collection('Tasks');
-    const data = {
-        todo_name: req.body.todo_name,
-        time: req.body.time,
-        notes: req.body.notes,
-        isCompleted: req.body.isCompleted,
-        userId: req.params.userId
-    }
-    
-    if(collection.find({task_name: req.params.task_name})) {
-        collection.find({task_name: req.params.task_name}).toArray((err, info) => {
-            const newData = info;
-            newData[0].items.push(data);
-            // console.log(newData[0].items[2]);
-
-            collection.updateOne({task_name: req.params.task_name}, {$set: newData[0]}, {upsert: true});
-        })
-        
-        res.send('To Do item added')
-        
-    }
-    else {
-        res.send('Task not found');
-    }
+    const collection = database.collection("todos");
+    collection.insertMany([
+        {
+            userId: req.body.userId,
+            task_name: req.params.task_name,
+            todo_name: req.body.todo_name,
+            time: req.body.time,
+            notes: req.body.notes,
+            isCompleted: false
+        }
+    ])
+    res.send("Todo Created")
 })
 
-// Change isCompleted
+// Update isCompleted new
 
-app.put('/isCompleted/:task_name/:todo_name/:isCompleted', (req, res) => {
-    mongoose.connect(mongoString);
+app.put('/todoCompleted/:todoId/:isCompleted', async (req, res) => {
+    await mongoose.connect(mongoString);
     const database = mongoose.connection;
-    const collection = database.collection('Tasks');
+    const collection = database.collection('todos');
 
-    if(collection.find({task_name: req.params.task_name})) {
-        collection.find({task_name: req.params.task_name}).toArray((err, info) => {
-            console.log(req.params.isCompleted)
-            const newData = info;
-            // console.log(req.params.task_name + ' ' + req.params.todo_name + ' ' + req.params.isCompleted)
+    collection.updateOne({"_id": ObjectId(`${req.params.todoId}`)}, {$set: {isCompleted: req.params.isCompleted}})
+    res.send('updated');
 
-            for(let i = 0; i < newData[0].items.length; i++) {
-
-                if(newData[0].items[i].todo_name === req.params.todo_name) {
-                    newData[0].items[i].isCompleted = req.params.isCompleted;
-
-                    collection.updateOne({task_name: req.params.task_name}, {$set: newData[0]}, {upsert: true});
-                    res.send('Item Updated');
-                    return;
-                    
-                }
-                else {
-                    console.log('not found at ' + i)
-                }
-            }
-        }) 
-    }
 })
 
 // edit single todo item
 
-app.put('/updateTodo/:task_name/:todo_name', (req, res) => {
-    mongoose.connect(mongoString);
+app.put('/updateTodo/:task_name/:todo_name', async (req, res) => {
+    await mongoose.connect(mongoString);
     const database = mongoose.connection;
     const collection = database.collection('Tasks');
 
@@ -208,32 +216,28 @@ app.put('/updateTodo/:task_name/:todo_name', (req, res) => {
 
 // Delete todo
 
-app.delete('/deleteTodo/:task_name/:todo_name', (req, res) => {
-    const collection = database.collection('Tasks');
-    collection.find({task_name: req.params.task_name}).toArray((err, results) => {
-        const data = results[0];
+app.delete('/deleteTodo/:todo_id', async (req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
+    const collection = database.collection('todos');
 
-        for(let i = 0; i < data.items.length; i++) {
-            if(data.items[i].todo_name === req.params.todo_name) {
-                data.items.splice(i, 1);
-                
-
-                collection.updateOne({task_name: req.params.task_name}, {$set: data}, {upsert: true})
-                
-                res.send("Deleted " + req.params.todo_name);
-            }
-            else console.log('not found at ' + i);
-        }
-    })
+    if(collection.find({"_id": ObjectId(req.params.todo_id)})) {
+        collection.deleteOne({"_id": ObjectId(req.params.todo_id)});
+        res.send("Todo Deleted")
+    }
+    else {
+        res.status(403).send("Todo not found");
+    }
 })
 
 // Delete Task
 
-app.delete('/deleteTask/:task_name', (req, res) => {
+app.delete('/deleteTask/:task_name', async (req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
     const collection = database.collection('Tasks');
     if(collection.find({task_name: req.params.task_name})) {
         collection.deleteOne({task_name: req.params.task_name});
-
         res.send("Deleted " + req.params.task_name);
     }
     else {
@@ -243,19 +247,23 @@ app.delete('/deleteTask/:task_name', (req, res) => {
 
 // Settings
 
-app.get('/getTheme', (req, res) => {
+app.get('/getTheme', async (req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
     const collection = database.collection('Settings');
     collection.find({settingName: 'themes'}).toArray((err, results) => {
         res.send(results);
     })
 })
 
-app.put('/setTheme/:primary/:secondary', (req, res) => {
+app.put('/setTheme/:primary/:secondary', async (req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
     const collection = database.collection('Settings');
     
     if(collection.find({settingName: 'themes'})) {
         collection.find({settingName: 'themes'}).toArray((err, results) => {
-            const newData = results[0];
+            // const newData = results[0];
             const newPrimary = req.params.primary;
             const newSecondary = req.params.secondary;
 
@@ -263,7 +271,6 @@ app.put('/setTheme/:primary/:secondary', (req, res) => {
             newData.themeColors.secondary = newSecondary;
 
             collection.updateOne({settingName: 'themes'}, {$set: newData}, {upsert: true});
-
             res.send({status: 'Theme updated'});
         })
     }
