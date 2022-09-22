@@ -42,17 +42,6 @@ app.get('/getAllTasks/:userId', async (req, res) => {
 
 })
 
-// Get all info for one task
-
-// app.get('/getTask/:task_name', async (req, res) => {
-//     await mongoose.connect(mongoString);
-//     const database = mongoose.connection;
-//     const collection = database.collection("Tasks");
-//     collection.find({task_name: req.params.task_name}).toArray((err, results) => {
-//        res.send(results)
-//     })
-// })
-
 // Get todos for user and task
 
 app.get('/getTodos/:userId/:task_name', async (req, res) => {
@@ -212,6 +201,25 @@ app.put('/updateTodo/:task_name/:todo_name', async (req, res) => {
         })
         
     }
+})
+
+// Update todo
+
+app.put('/updateTodo/:todoId', async(req, res) => {
+    await mongoose.connect(mongoString);
+    const database = mongoose.connection;
+    const collection = database.collection('todos');
+
+    // collection.updateOne({"_id": ObjectId(req.params.todoId)}, {$set: {}})
+    collection.find({"_id": ObjectId(req.params.todoId)}).toArray((err, results) => {
+        const data = results[0];
+        data.todo_name = req.body.todo_name;
+        data.time = req.body.time;
+        data.notes =  req.body.notes;
+        
+        collection.updateOne({"_id": ObjectId(req.params.todoId)}, {$set: data}, {upsert: true})
+        res.send('todo updated')
+    })
 })
 
 // Delete todo
