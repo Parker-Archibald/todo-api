@@ -268,20 +268,15 @@ app.put('/setTheme/:primary/:secondary', async (req, res) => {
     await mongoose.connect(mongoString);
     const database = mongoose.connection;
     const collection = database.collection('Settings');
-    
-    if(collection.find({settingName: 'themes'})) {
-        collection.find({settingName: 'themes'}).toArray((err, results) => {
-            // const newData = results[0];
-            const newPrimary = req.params.primary;
-            const newSecondary = req.params.secondary;
 
-            newData.themeColors.primary = newPrimary;
-            newData.themeColors.secondary = newSecondary;
+    collection.find({settingName: 'themes'}).toArray((err,results) => {
+        const newData = results;
+        newData[0].themeColors.primary = req.params.primary;
+        newData[0].themeColors.secondary = req.params.secondary;
 
-            collection.updateOne({settingName: 'themes'}, {$set: newData}, {upsert: true});
-            res.send({status: 'Theme updated'});
-        })
-    }
+        collection.updateOne({settingName: 'themes'}, {$set: newData[0]}, {upsert: true});
+        res.send({status: 'Theme updated'});
+    })
 })
 
 app.listen(port, () => {
